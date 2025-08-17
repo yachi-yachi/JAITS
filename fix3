@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ICE SYNTH - シンクロナイズド・スケーティング</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --primary:#0a0f1c;--secondary:#1a1f36;
+      --accent:#00d4ff;--accent-dark:#0099cc;
+      --text:#fff;--text-muted:#a0a8b8;
+      --glass:rgba(255,255,255,.05);--glass-border:rgba(255,255,255,.1)
+    }
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--primary);color:var(--text);line-height:1.7;overflow-x:hidden;scroll-behavior:smooth}
+    .bg{position:fixed;inset:0;background:
+      radial-gradient(circle at 20% 30%, rgba(0,212,255,.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(0,153,204,.08) 0%, transparent 50%),
+      linear-gradient(135deg,var(--primary),var(--secondary));z-index:-1}
+    /* Header */
+    .top{position:fixed;left:0;right:0;top:0;background:rgba(10,15,28,.95);backdrop-filter:blur(20px);
+      border-bottom:1px solid var(--glass-border);z-index:1000}
+    .nav{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem}
+    .logo{font-size:1.6rem;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent-dark));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .nav-menu{display:flex;gap:1.5rem;list-style:none}
+    .nav-menu a{color:var(--text-muted);text-decoration:none;font-weight:700;position:relative;padding:.25rem 0;transition:.2s}
+    .nav-menu a:hover{color:var(--accent);transform:translateY(-1px)}
+    .nav-menu a::after{content:"";position:absolute;left:50%;bottom:-6px;height:2px;width:0;background:var(--accent);transform:translateX(-50%);transition:.2s}
+    .nav-menu a:hover::after,.nav-menu a.active::after{width:100%}
+    .lang-btn{background:var(--glass);border:1px solid var(--glass-border);border-radius:999px;padding:.5rem 1rem;color:var(--text);cursor:pointer;font-weight:700}
+    .lang-btn:hover{background:var(--accent);color:var(--primary)}
+    .hamburger{display:none;flex-direction:column;gap:4px;padding:.5rem;cursor:pointer}
+    .hamburger span{width:26px;height:3px;background:var(--text);border-radius:2px}
+    /* Mobile menu */
+    .mobile{position:fixed;left:0;right:0;top:64px;background:rgba(10,15,28,.98);backdrop-filter:blur(20px);
+      transform:translateY(-120%);transition:transform .25s ease;z-index:999;border-bottom:1px solid var(--glass-border)}
+    .mobile.active{transform:translateY(0)}
+    .mobile ul{list-style:none;padding:1rem 1.25rem;display:grid;gap:.75rem}
+    .mobile a{display:block;color:var(--text);text-decoration:none;padding:.9rem 1rem;border-radius:12px;background:var(--glass);border:1px solid var(--glass-border);font-weight:700}
+    .mobile a:hover{background:var(--accent);color:var(--primary)}
+    /* Main */
+    main{padding-top:80px}
+    section{padding:5rem 1.25rem;max-width:1200px;margin:0 auto}
+    .title{font-size:3rem;font-weight:900;text-align:center;margin-bottom:2rem;
+      background:linear-gradient(135deg,var(--accent),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero{min-height:calc(100vh - 80px);display:flex;align-items:center;justify-content:center;text-align:center}
+    .hero h1{font-size:5rem;font-weight:900;background:linear-gradient(135deg,var(--accent) 0%,#fff 50%,var(--accent-dark) 100%);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:1rem;line-height:1.05}
+    .hero .sub{font-size:1.35rem;color:var(--text-muted);margin-bottom:2rem}
+    .cta{display:inline-block;background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:var(--primary);
+      padding:1rem 2rem;border-radius:999px;text-decoration:none;font-weight:900;box-shadow:0 10px 30px rgba(0,212,255,.3)}
+    .grid{display:grid;gap:1.25rem;margin-top:1.25rem}
+    .g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+    .g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+    .card{background:var(--glass);border:1px solid var(--glass-border);border-radius:20px;padding:2rem}
+    .ctitle{font-size:1.6rem;font-weight:800;margin-bottom:.8rem;background:linear-gradient(135deg,var(--accent),#fff);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .ctext{color:var(--text-muted);font-size:1.05rem;line-height:1.9}
+    .news-date{color:var(--accent);font-weight:700;margin-bottom:.4rem}
+    .label{display:block;margin:.5rem 0 .35rem;color:var(--text);font-weight:700}
+    .input{width:100%;padding:1rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:12px;color:var(--text)}
+    .submit{margin-top:.75rem;width:100%;padding:1rem;border:none;border-radius:999px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));
+      color:var(--primary);font-weight:900;cursor:pointer}
+    /* Language visibility */
+    .lang-ja{display:block}.lang-en{display:none}
+    body.lang-en .lang-ja{display:none} body.lang-en .lang-en{display:block}
+    /* Responsive */
+    @media (max-width:980px){.nav-menu{display:none}.hamburger{display:flex}}
+    @media (max-width:620px){.hero h1{font-size:3rem}.title{font-size:2.2rem}}
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+  <header class="top">
+    <div class="nav">
+      <div class="logo">ICE SYNTH</div>
+      <ul class="nav-menu" id="navMenu">
+        <li><a href="#home" data-target="home" class="active lang-ja">ホーム</a><a href="#home" data-target="home" class="active lang-en">Home</a></li>
+        <li><a href="#team" data-target="team" class="lang-ja">チーム紹介</a><a href="#team" data-target="team" class="lang-en">Team</a></li>
+        <li><a href="#news" data-target="news" class="lang-ja">ニュース</a><a href="#news" data-target="news" class="lang-en">News</a></li>
+        <li><a href="#sport" data-target="sport" class="lang-ja">競技紹介</a><a href="#sport" data-target="sport" class="lang-en">Sport</a></li>
+        <li><a href="#coaches" data-target="coaches" class="lang-ja">コーチ紹介</a><a href="#coaches" data-target="coaches" class="lang-en">Coaches</a></li>
+        <li><a href="#sns" data-target="sns" class="lang-ja">SNS</a><a href="#sns" data-target="sns" class="lang-en">Social</a></li>
+        <li><a href="#join" data-target="join" class="lang-ja">チーム加入</a><a href="#join" data-target="join" class="lang-en">Join Us</a></li>
+        <li><a href="#contact" data-target="contact" class="lang-ja">お問い合わせ</a><a href="#contact" data-target="contact" class="lang-en">Contact</a></li>
+      </ul>
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <button class="lang-btn" id="langBtn"><span class="lang-ja">English</span><span class="lang-en">日本語</span></button>
+        <div class="hamburger" id="hamburger" aria-label="open menu"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+    <nav class="mobile" id="mobileNav">
+      <ul>
+        <li><a href="#home" data-target="home" onclick="closeMobile()">Home / ホーム</a></li>
+        <li><a href="#team" data-target="team" onclick="closeMobile()">Team / チーム紹介</a></li>
+        <li><a href="#news" data-target="news" onclick="closeMobile()">News / ニュース</a></li>
+        <li><a href="#sport" data-target="sport" onclick="closeMobile()">Sport / 競技紹介</a></li>
+        <li><a href="#coaches" data-target="coaches" onclick="closeMobile()">Coaches / コーチ紹介</a></li>
+        <li><a href="#sns" data-target="sns" onclick="closeMobile()">Social / SNS</a></li>
+        <li><a href="#join" data-target="join" onclick="closeMobile()">Join / チーム加入</a></li>
+        <li><a href="#contact" data-target="contact" onclick="closeMobile()">Contact / お問い合わせ</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <!-- HOME -->
+    <section id="home" class="hero" data-title-ja="ホーム" data-title-en="Home">
+      <div>
+        <h1>ICE SYNTH</h1>
+        <p class="sub lang-ja">次世代シンクロナイズド・スケーティング</p>
+        <p class="sub lang-en">Next Generation Synchronized Skating</p>
+        <a href="#team" class="cta lang-ja">チームを見る</a>
+        <a href="#team" class="cta lang-en">Explore Team</a>
+      </div>
+    </section>
+
+    <!-- TEAM -->
+    <section id="team" data-title-ja="チーム紹介" data-title-en="Team">
+      <h2 class="title lang-ja">チーム紹介</h2>
+      <h2 class="title lang-en">Our Team</h2>
+      <div class="card">
+        <h3 class="ctitle lang-ja">🚀 チームビジョン</h3>
+        <h3 class="ctitle lang-en">🚀 Team Vision</h3>
+        <p class="ctext lang-ja">技術革新と芸術的表現の融合を追求し、観る人の心に深く刻まれる演技を目指します。個性を尊重し、唯一無二のハーモニーを創造します。</p>
+        <p class="ctext lang-en">We fuse technological innovation with artistry to craft unforgettable performances. We respect individuality while creating unique team harmony.</p>
+      </div>
+      <div class="grid g2">
+        <div class="card">
+          <h3 class="ctitle lang-ja">💎 チームの強み</h3>
+          <h3 class="ctitle lang-en">💎 Team Strengths</h3>
+          <p class="ctext lang-ja">• 革新的な振付 / • 高度な技術力 / • 団結力</p>
+          <p class="ctext lang-en">• Innovative choreography / • Advanced technique / • Unity</p>
+        </div>
+        <div class="card">
+          <h3 class="ctitle lang-ja">🎖️ 主な実績</h3>
+          <h3 class="ctitle lang-en">🎖️ Achievements</h3>
+          <p class="ctext lang-ja">2024 地区選手権 優勝・2023 全国3位・2022 最優秀表現賞</p>
+          <p class="ctext lang-en">2024 Regional Winner・2023 Nationals 3rd・2022 Best Expression</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- NEWS -->
+    <section id="news" data-title-ja="ニュース" data-title-en="News">
+      <h2 class="title lang-ja">ニュース</h2>
+      <h2 class="title lang-en">News</h2>
+      <div class="grid g2">
+        <div class="card">
+          <div class="news-date">2025.08.17</div>
+          <h3 class="ctitle lang-ja">全国大会出場決定</h3>
+          <h3 class="ctitle lang-en">Nationals Qualification</h3>
+          <p class="ctext lang-ja">地区予選を1位通過。全国大会でのメダルを目指します。</p>
+          <p class="ctext lang-en">1st at regionals—aiming for a medal at Nationals.</p>
+        </div>
+        <div class="card">
+          <div class="news-date">2025.08.10</div>
+          <h3 class="ctitle lang-ja">新プログラム発表</h3>
+          <h3 class="ctitle lang-en">New Program</h3>
+          <p class="ctext lang-ja">今季は「Digital Symphony」で挑戦。</p>
+          <p class="ctext lang-en">This season: “Digital Symphony”.</p>
+        </div>
+        <div class="card">
+          <div class="news-date">2025.08.05</div>
+          <h3 class="ctitle lang-ja">メンバー募集開始</h3>
+          <h3 class="ctitle lang-en">Recruiting Members</h3>
+          <p class="ctext lang-ja">未経験歓迎。体験練習は随時受付中。</p>
+          <p class="ctext lang-en">Beginners welcome. Trial practice any time.</p>
+        </div>
+        <div class="card">
+          <div class="news-date">2025.07.28</div>
+          <h3 class="ctitle lang-ja">夏季強化合宿</h3>
+          <h3 class="ctitle lang-en">Summer Camp</h3>
+          <p class="ctext lang-ja">8月中旬より集中的に実施。</p>
+          <p class="ctext lang-en">Intensive camp from mid‑August.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SPORT -->
+    <section id="sport" data-title-ja="競技紹介" data-title-en="Sport">
+      <h2 class="title lang-ja">シンクロナイズド・スケーティングとは</h2>
+      <h2 class="title lang-en">About Synchronized Skating</h2>
+      <div class="card">
+        <p class="ctext lang-ja">複数のスケーターが音楽に合わせて同調して演技する競技。調和と表現力が鍵です。</p>
+        <p class="ctext lang-en">A team sport performed in flawless unison—harmony and expression are key.</p>
+      </div>
+      <div class="grid g3">
+        <div class="card"><h3 class="ctitle">⚡ Speed & Power</h3><p class="ctext">迫力あるスピードと力強いフォーメーション。</p></div>
+        <div class="card"><h3 class="ctitle">🎭 Artistic</h3><p class="ctext">音楽と一体の芸術的表現。</p></div>
+        <div class="card"><h3 class="ctitle">🤝 Teamwork</h3><p class="ctext">完璧な同調性と信頼関係。</p></div>
+      </div>
+    </section>
+
+    <!-- COACHES -->
+    <section id="coaches" data-title-ja="コーチ紹介" data-title-en="Coaches">
+      <h2 class="title lang-ja">コーチ紹介</h2>
+      <h2 class="title lang-en">Coaches</h2>
+      <div class="grid g3">
+        <div class="card"><h3 class="ctitle">👩‍🏫 田中 美香子</h3><p class="ctext">HEAD COACH / 20年以上の指導実績。</p></div>
+        <div class="card"><h3 class="ctitle">👨‍🏫 佐藤 健太</h3><p class="ctext">TECHNICAL COACH / 分析×技術。</p></div>
+        <div class="card"><h3 class="ctitle">👩‍🎨 山田 えりか</h3><p class="ctext">CHOREOGRAPHER / 革新的な振付。</p></div>
+      </div>
+    </section>
+
+    <!-- SOCIAL -->
+    <section id="sns" data-title-ja="SNS" data-title-en="Social">
+      <h2 class="title">SOCIAL</h2>
+      <div class="grid g2">
+        <a class="card" href="#" aria-label="Facebook">📘 Facebook</a>
+        <a class="card" href="#" aria-label="Instagram">📷 Instagram</a>
+        <a class="card" href="#" aria-label="Twitter">🐦 Twitter</a>
+        <a class="card" href="#" aria-label="YouTube">📺 YouTube</a>
+      </div>
+    </section>
+
+    <!-- JOIN -->
+    <section id="join" data-title-ja="チーム加入" data-title-en="Join Us">
+      <h2 class="title lang-ja">JOIN US</h2>
+      <h2 class="title lang-en">JOIN US</h2>
+      <div class="grid g2">
+        <div class="card"><h3 class="ctitle">🗓️ 練習</h3><p class="ctext">火・木 18:00-20:00 / 土 13:00-16:00（名古屋アイスアリーナ）</p></div>
+        <div class="card"><h3 class="ctitle">💰 料金</h3><p class="ctext">入会金 ¥10,000 / 月会費 ¥15,000 / 用具レンタル 別途</p></div>
+        <div class="card"><h3 class="ctitle">👥 対象</h3><p class="ctext">中学生以上・レベル不問・体験OK</p></div>
+        <div class="card"><h3 class="ctitle">🎯 必要なもの</h3><p class="ctext">動きやすい服・タオル/飲み物・やる気！</p></div>
+      </div>
+      <div class="card" style="margin-top:1rem">
+        <h3 class="ctitle">📞 体験申込</h3>
+        <p class="ctext" style="margin:.5rem 0 1rem">体験練習のお申し込みはお気軽にどうぞ。</p>
+        <a href="#contact" class="cta">体験申込フォーム</a>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact" data-title-ja="お問い合わせ" data-title-en="Contact">
+      <h2 class="title lang-ja">お問い合わせ</h2>
+      <h2 class="title lang-en">Contact</h2>
+      <div class="card">
+        <form id="contactForm">
+          <label class="label" for="name">お名前 *</label>
+          <input id="name" class="input" type="text" placeholder="山田太郎" required>
+          <label class="label" for="email">メールアドレス *</label>
+          <input id="email" class="input" type="email" placeholder="example@email.com" required>
+          <label class="label" for="subject">件名</label>
+          <input id="subject" class="input" type="text" placeholder="体験練習について">
+          <label class="label" for="message">メッセージ *</label>
+          <textarea id="message" class="input" rows="6" placeholder="お問い合わせ内容をご記入ください" required></textarea>
+          <button class="submit" type="submit">送信する</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ===== Language toggle =====
+    const langBtn = document.getElementById('langBtn');
+    langBtn.addEventListener('click', () => {
+      document.body.classList.toggle('lang-en');
+      // keep hash and active link highlighting unaffected
+    });
+
+    // ===== Mobile menu =====
+    const hamburger = document.getElementById('hamburger');
+    const mobileNav = document.getElementById('mobileNav');
+    hamburger.addEventListener('click', () => {
+      mobileNav.classList.toggle('active');
+    });
+    function closeMobile(){ mobileNav.classList.remove('active'); }
+    window.closeMobile = closeMobile;
+
+    // ===== Smooth scroll with offset =====
+    const HEADER_OFFSET = 80;
+    function scrollToHash(id){
+      const el = document.getElementById(id);
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const targetY = window.scrollY + rect.top - HEADER_OFFSET + 1;
+      window.scrollTo({ top: targetY, behavior: 'smooth' });
+    }
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', (e) => {
+        const hash = a.getAttribute('href');
+        if (!hash || hash === '#') return;
+        const id = hash.slice(1);
+        e.preventDefault();
+        history.pushState(null, '', hash);
+        scrollToHash(id);
+        mobileNav.classList.remove('active');
+      });
+    });
+
+    // ===== Active nav link & hash handling =====
+    const sections = Array.from(document.querySelectorAll('main section[id]'));
+    const navLinks = Array.from(document.querySelectorAll('.nav-menu a[data-target]'));
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting){
+          const id = entry.target.id;
+          // Update active class
+          navLinks.forEach(l => l.classList.toggle('active', l.dataset.target === id));
+          // Update hash without scrolling
+          if (location.hash !== '#' + id){
+            history.replaceState(null, '', '#' + id);
+          }
+          // Update document title for accessibility / SEO
+          const ja = entry.target.getAttribute('data-title-ja') || '';
+          const en = entry.target.getAttribute('data-title-en') || '';
+          document.title = document.body.classList.contains('lang-en') ? `ICE SYNTH - ${en}` : `ICE SYNTH - ${ja}`;
+        }
+      });
+    }, { rootMargin: '-50% 0px -50% 0px', threshold: 0.01 });
+
+    sections.forEach(s => observer.observe(s));
+
+    // On load, jump to hash respecting offset (no double-scroll)
+    window.addEventListener('load', () => {
+      if (location.hash){
+        const id = location.hash.slice(1);
+        setTimeout(() => scrollToHash(id), 50);
+      }
+    });
+
+    // ===== Contact form (dummy) =====
+    const form = document.getElementById('contactForm');
+    if (form){
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        alert('送信ありがとうございました！内容を受け付けました。');
+        form.reset();
+      });
+    }
+  </script>
+</body>
+</html>
